@@ -1,62 +1,28 @@
-name: Deploy
+SERVER_PORT=7777
 
-on:
-  push:
-    branches:
-      - main
+CORS_ALLOWED_ORIGINS=http://AWS_PUBLIC_IP:3000
 
-env:
-  DOCKER_IMAGE: ghcr.io/${{ github.actor }}/spring-backend:latest
+SPRING_APPLICATION_NAME=spring-special-lecture
 
-jobs:
-  build:
-    name: build-app
-    runs-on: ubuntu-latest
-    steps:
-      ## jdk setting
-      - uses: actions/checkout@v3
-      - name: Set up JDK 17
-        uses: actions/setup-java@v3
-        with:
-          java-version: '17'
-          distribution: 'zulu'
-        
-      - name: Create application.yaml for CD Deploy
-        run: |
-          echo "${{ secrets.PRODUCTION_ENV }}" > .env
-          
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/special_lecture_db?allowpublickeyretrieval=true&usessl=false&serverTimezone=UTC
+SPRING_DATASOURCE_USERNAME=eddi
+SPRING_DATASOURCE_PASSWORD=eddi@123
+SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
+SPRING_DATASOURCE_DIALECT=org.hibernate.dialect.MySQL8Dialect
 
-      ## gradle build
-      - name: Build with Gradle
-        run: |
-          ls
-          ./gradlew clean build -x test
+SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL=true
+SPRING_JPA_OPEN_IN_VIEW=false
+SPRING_JPA_DATABASE=mysql
+SPRING_JPA_SHOW_SQL=true
+SPRING_JPA_GENERATE_DDL=true
+SPRING_JPA_HIBERNATE_DDL_AUTO=update
 
-      ## docker build & push to production
-      - name: Docker build & push to prod
-        run: |
-          docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GHCR_TOKEN }}
-          docker buildx create --name arm64builder --use
-          docker buildx build --platform linux/amd64,linux/arm64 -f Dockerfile -t ghcr.io/${{ github.actor }}/spring-backend:latest --push .
-          docker logout
-          
-  deploy:
-    needs: build
-    name: Deploy
-    runs-on: [ self-hosted, deploy-spring-test ]
-    steps:
-      - name: Deploy to Production
-        run: |
-          echo "Starting Backend Production Deployment"
-          cd /home/ec2-user/spring-deploy-test
-          docker-compose down
-  
-          echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          docker pull ${{ env.DOCKER_IMAGE }}
-  
-          docker image prune -f
-          docker logout
-  
-          docker-compose up -d
+SPRING_DATA_REDIS_HOST=localhost
+SPRING_DATA_REDIS_PORT=6379
+SPRING_DATA_REDIS_PASSWORD=eddi@123
+
+KAKAO_LOGIN_URL=https://kauth.kakao.com
+KAKAO_CLIENT_ID=dia0723_REST_API_KEY
+KAKAO_REDIRECT_URI=http://AWS_PUBLIC_IP:7778/kakao-authentication/login
+KAKAO_TOKEN_REQUEST_URI=https://kauth.kakao.com/oauth/token
+KAKAO_USER_INFO_REQUEST_URI=https://kapi.kakao.com/v2/user/me
